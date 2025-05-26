@@ -81,6 +81,7 @@ def display_kpi_metrics(kpi_values: List[str], kpi_names: List[str]) -> None:
         for col, name, val in zip(cols, names, vals):
             with col:
                 st.metric(label=name, value=val)
+    
     metric_row(kpi_values[:4], kpi_names[:4], n_cols=4)
     metric_row(kpi_values[4:],  kpi_names[4:], n_cols=2)
 
@@ -111,9 +112,13 @@ def overview_page(df: pd.DataFrame) -> None:
 def analysis_page(df: pd.DataFrame) -> None:
     st.header("Required Task Analysis")
     st.subheader("1. Orders Development Over Time")
+    
+    # Weekly analysis
     weekly = (df.groupby("week_start")["order_id"].nunique().reset_index(name="orders"))
     
-    fig_week = px.line(weekly, x="week_start", y="orders", markers=True,title="Weekly Order Volume")
+    fig_week = px.line(weekly, x="week_start", y="orders", markers=True, 
+                       title="Weekly Order Volume")
+    fig_week.update_traces(fill='tozeroy')
     fig_week.update_layout(xaxis_title="Week (Mon–Sun)", yaxis_title="Number of Orders")
     st.plotly_chart(fig_week, use_container_width=True)
 
@@ -126,16 +131,20 @@ def analysis_page(df: pd.DataFrame) -> None:
         f"avg {weekly['orders'].mean():.1f} per week."
     )
 
+    # Monthly analysis - changed to line chart
     monthly = (df.groupby("month_start")["order_id"].nunique().reset_index(name="orders"))
-    fig_month = px.bar(monthly, x="month_start", y="orders", text="orders", title="Monthly Order Volume")
-    fig_month.update_traces(textposition="outside")
+    fig_month = px.line(monthly, x="month_start", y="orders", markers=True, 
+                        title="Monthly Order Volume")
+    fig_month.update_traces(fill='tozeroy')
+    fig_month.update_layout(xaxis_title="Month", yaxis_title="Number of Orders")
+    
     st.plotly_chart(fig_month, use_container_width=True)
 
     st.info(
         "**Observation:** April 2024 tops the period at 28 orders, more than double "
         "compared to October 2025 trough at 11 orders, from here we have marginal "
-        "decline. We have rebound in March 2025’s at 24 orders so replicating whatever "
-        "drove April’s lift could potentially prevent future dips."
+        "decline. We have rebound in March 2025's at 24 orders so replicating whatever "
+        "drove April's lift could potentially prevent future dips."
     )
 
     # Most frequently ordered products 
@@ -186,6 +195,12 @@ def insights_page(df: pd.DataFrame) -> None:
         "customer base. Individual spend ranges from \$4,678 to \$6,695. "
     )
 
+    category_colors = {
+    'Real Estate': '#87CEEB',      # Light blue (from pie chart)
+    'Business': '#4682B4',         # Medium blue
+    'Personal': '#FFB6C1',         # Light pink/salmon
+    'Intellectual Property': '#FF6B6B'  # Red
+    }
 
     # Category 
     st.subheader("Product Category Analysis")
@@ -197,7 +212,9 @@ def insights_page(df: pd.DataFrame) -> None:
 
     col1, col2 = st.columns([2, 1])
     with col1:
-        pie = px.pie(category_perf, names="category", values="item_revenue",title="Revenue Distribution by Category")
+        pie = px.pie(category_perf, names="category", values="item_revenue",
+                     title="Revenue Distribution by Category",
+                     color="category", color_discrete_map=category_colors)
         st.plotly_chart(pie, use_container_width=True)
 
     with col2:
@@ -217,7 +234,7 @@ def insights_page(df: pd.DataFrame) -> None:
         ).reset_index().sort_values("item_revenue", ascending=False).head(10))
 
     fig = px.bar(top_products, x="product_name", y="item_revenue", color="category",
-                 title="Top 10 Products by Revenue")
+                 title="Top 10 Products by Revenue", color_discrete_map=category_colors)
     fig.update_layout(xaxis_tickangle=45)
     st.plotly_chart(fig, use_container_width=True)
 
