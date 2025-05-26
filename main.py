@@ -196,10 +196,10 @@ def insights_page(df: pd.DataFrame) -> None:
     )
 
     category_colors = {
-    'Real Estate': '#87CEEB',      # Light blue (from pie chart)
-    'Business': '#4682B4',         # Medium blue
-    'Personal': '#FFB6C1',         # Light pink/salmon
-    'Intellectual Property': '#FF6B6B'  # Red
+    'Real Estate': '#87CEEB',     
+    'Business': '#4682B4',         
+    'Personal': '#FFB6C1',         
+    'Intellectual Property': '#FF6B6B'
     }
 
     # Category 
