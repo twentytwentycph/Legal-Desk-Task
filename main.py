@@ -9,12 +9,10 @@ import plotly.express as px
 DB_PATH = "legal_documents_ecommerce.db"
 
 def set_page_config() -> None:
-    st.set_page_config(
-        page_title="Legal Desk Analytics Dashboard",
-        page_icon="📑",
+    st.set_page_config(page_title="Legal Desk Analytics Dashboard", page_icon="📑",
         layout="wide",
-        initial_sidebar_state="expanded",
-    )
+        initial_sidebar_state="expanded",)
+    
     st.markdown("""
         <style>
             footer {visibility: hidden;}
@@ -48,11 +46,9 @@ def load_data() -> pd.DataFrame:
     df = pd.read_sql_query(query, conn)
     conn.close()
 
-    # datetime conversions
     df["order_date"] = pd.to_datetime(df["order_date"])
     df["registration_date"] = pd.to_datetime(df["registration_date"])
 
-    # time buckets
     df["week_start"] = df["order_date"] - pd.to_timedelta(df["order_date"].dt.dayofweek, unit="d")
     df["month_start"] = df["order_date"].dt.to_period("M").dt.to_timestamp()
 
@@ -88,8 +84,6 @@ def display_kpi_metrics(kpi_values: List[str], kpi_names: List[str]) -> None:
 
 def overview_page(df: pd.DataFrame) -> None:
     st.header("Business/data Overview")
-
-    # KPI 
     kpi_names = [
         "Total Customers",
         "Total Orders",
@@ -101,7 +95,6 @@ def overview_page(df: pd.DataFrame) -> None:
     kpi_vals = calculate_kpis(df)
     display_kpi_metrics(kpi_vals, kpi_names)
 
-    # Dataset info 
     st.subheader("Dataset Information")
     st.write(f"**Date Range:** {df['order_date'].min().date()} ➜ {df['order_date'].max().date()}")
     st.write(f"**Total Records:** {len(df):,}")
@@ -131,7 +124,6 @@ def analysis_page(df: pd.DataFrame) -> None:
         f"avg {weekly['orders'].mean():.1f} per week."
     )
 
-    # Monthly analysis - changed to line chart
     monthly = (df.groupby("month_start")["order_id"].nunique().reset_index(name="orders"))
     fig_month = px.line(monthly, x="month_start", y="orders", markers=True, 
                         title="Monthly Order Volume")
@@ -147,7 +139,6 @@ def analysis_page(df: pd.DataFrame) -> None:
         "drove April's lift could potentially prevent future dips."
     )
 
-    # Most frequently ordered products 
     st.subheader("2. Most Frequently Ordered Products")
     top_n = st.slider("Show top N products", 5, 30, 10)
 
@@ -161,7 +152,7 @@ def analysis_page(df: pd.DataFrame) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
     if not prod_freq.empty:
-        top_two = prod_freq.head(2)["product_name"].tolist()   # ['Deed of Trust', 'NDA Agreement']
+        top_two = prod_freq.head(2)["product_name"].tolist()  
         combined_share = (
             df.loc[df["product_name"].isin(top_two), "order_id"].nunique()
             / df["order_id"].nunique()
@@ -175,7 +166,6 @@ def analysis_page(df: pd.DataFrame) -> None:
 def insights_page(df: pd.DataFrame) -> None:
     st.header("Additional BI")
 
-    # Customer Value Analysis
     st.subheader("Customer Value Analysis")
     cust_val = (df.groupby(["customer_id", "first_name", "last_name"]).agg(
             item_revenue=("item_revenue", "sum"),
@@ -196,13 +186,12 @@ def insights_page(df: pd.DataFrame) -> None:
     )
 
     category_colors = {
-    'Real Estate': '#87CEEB',     
-    'Business': '#4682B4',         
-    'Personal': '#FFB6C1',         
-    'Intellectual Property': '#FF6B6B'
+    'Real Estate': '#87CEEB',      
+    'Business': '#4682B4',       
+    'Personal': '#FFB6C1',       
+    'Intellectual Property': '#FF6B6B'  
     }
 
-    # Category 
     st.subheader("Product Category Analysis")
     category_perf = (df.groupby("category").agg(
             item_revenue=("item_revenue", "sum"),
@@ -226,12 +215,9 @@ def insights_page(df: pd.DataFrame) -> None:
         rf"**Observation**: Revenue is more or less evenly balanced across categories: Real Estate 30.6%, Business 30%, Personal 23.2%, IP 16.2%"
     )
 
-    # Top products by revenue
     st.subheader("Top Products by Revenue")
-    top_products = (df.groupby(["product_name", "category"]).agg(
-            item_revenue=("item_revenue", "sum"),
-            quantity     =("quantity",    "sum"),
-        ).reset_index().sort_values("item_revenue", ascending=False).head(10))
+    top_products = (df.groupby(["product_name", "category"]).agg(item_revenue=("item_revenue", "sum"),
+            quantity = ("quantity",    "sum"),).reset_index().sort_values("item_revenue", ascending=False).head(10))
 
     fig = px.bar(top_products, x="product_name", y="item_revenue", color="category",
                  title="Top 10 Products by Revenue", color_discrete_map=category_colors)
